@@ -9,16 +9,7 @@ static const char *const TAG = "levoit.fan";
 void LevoitFan::setup() {
   uint32_t listenMask = this->parent_->fanChangeMask;
 
-  switch (this->parent_->device_model_) {
-    // represents power mode
-    case LevoitDeviceModel::CORE_400S:
-    case LevoitDeviceModel::CORE_200S:
-      powerMask |= (static_cast<uint32_t>(LevoitState::POWER) + static_cast<uint32_t>(LevoitState::FAN_MANUAL));
-      break;
-    default:
-      //represensts fan mode
-      powerMask |= static_cast<uint32_t>(LevoitState::FAN_MANUAL);
-  }
+  powerMask |= (static_cast<uint32_t>(LevoitState::POWER) + static_cast<uint32_t>(LevoitState::FAN_MANUAL));
 
   listenMask |= powerMask;
 
@@ -26,7 +17,7 @@ void LevoitFan::setup() {
     [this](uint32_t currentBits) {
       bool powerState = (currentBits & powerMask) == powerMask;
 
-      this->state = currentBits & powerState;
+      this->state = powerState;
 
       uint8_t newSpeed;
 
@@ -68,26 +59,14 @@ void LevoitFan::control(const fan::FanCall &call) {
   if (call.get_state().has_value()) {
     newPowerState = *call.get_state();
     
-    switch (this->parent_->device_model_) {
-      case LevoitDeviceModel::CORE_400S:
-      case LevoitDeviceModel::CORE_200S:
-        if (newPowerState) {
-          onMask |= static_cast<uint32_t>(LevoitState::POWER) + static_cast<uint32_t>(LevoitState::FAN_MANUAL);
-          offMask &= ~static_cast<uint32_t>(LevoitState::POWER);
-        } else {
-          onMask &= ~static_cast<uint32_t>(LevoitState::POWER);
-          offMask |= static_cast<uint32_t>(LevoitState::POWER);
-        }
-        break;
-      default:
-        if (newPowerState) {
-          onMask |= static_cast<uint32_t>(LevoitState::FAN_MANUAL);
-          offMask &= ~static_cast<uint32_t>(LevoitState::FAN_MANUAL);
-        } else {
-          onMask &= ~static_cast<uint32_t>(LevoitState::FAN_MANUAL);
-          offMask |= static_cast<uint32_t>(LevoitState::FAN_MANUAL);
-        }
+    if (newPowerState) {
+      onMask |= static_cast<uint32_t>(LevoitState::POWER) + static_cast<uint32_t>(LevoitState::FAN_MANUAL);
+      offMask &= ~static_cast<uint32_t>(LevoitState::POWER);
+    } else {
+      onMask &= ~static_cast<uint32_t>(LevoitState::POWER);
+      offMask |= static_cast<uint32_t>(LevoitState::POWER);
     }
+
   }
 
   if (call.get_speed().has_value()) {
