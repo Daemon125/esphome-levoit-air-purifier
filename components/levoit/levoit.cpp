@@ -444,13 +444,12 @@ void Levoit::handle_payload_(LevoitPayloadType type, uint8_t *payload, size_t le
       pm25NAN = (payload[12] == 0xFF && payload[13] == 0xFF);
       if (!pm25NAN) {
         uint16_t raw_value = (payload[13] << 8) + payload[12];
-        
+        uint32_t new_pm25Value = 0;
         switch (this->device_model_) {
           case LevoitDeviceModel::CORE_200S:
-            new_pm25Value = raw_value / 10000;
+            new_pm25Value = raw_value / 1000;
             break;
 
-          case LevoitDeviceModel::UNKNOWN:
           case LevoitDeviceModel::CORE_300S:
           case LevoitDeviceModel::CORE_400S:
           default:
